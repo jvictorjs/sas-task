@@ -19,8 +19,12 @@
         />
       </a>
       <div class="mt-8 bg-white overflow-hidden shadow sm:rounded-lg p-6">
-        <div class="flex ">
-          <b-button class="mb-2" variant="light" v-b-modal="'my-modal'" size="sm"
+        <div class="flex">
+          <b-button
+            class="mb-2"
+            variant="light"
+            v-b-modal="'my-modal'"
+            size="sm"
             >searchandstay development task</b-button
           >
           <b-modal id="my-modal" hide-footer>
@@ -69,7 +73,11 @@
                 ></b-form-input>
               </b-form-group>
 
-              <b-button type="submit" variant="primary">Login</b-button>
+              <b-spinner v-if="isLoading" label="Spinning"></b-spinner>
+              <b-button v-else type="submit" :disabled="isLoggedIn"
+                >Login</b-button
+              >
+              {{ loginMessageText }}
             </b-form>
           </div>
         </div>
@@ -123,12 +131,50 @@ export default {
         email: '',
         password: '',
       },
+      isLoading: false,
+      isLoggedIn: false,
+      loginMessageText: '',
     }
   },
   methods: {
     onSubmit(event) {
       event.preventDefault()
       console.log(JSON.stringify(this.form))
+      const LOGIN_URL = 'https://sys-dev.searchandstay.com/api/admin/login_json'
+      const LOGIN_BODY = {
+        login: {
+          email: this.form.email,
+          password: this.form.password,
+        },
+      }
+      console.log('LOGIN_BODY =', LOGIN_BODY)
+      this.isLoading = true
+      async function postData(url = '', data = {}) {
+        const response = await fetch(url, {
+          method: 'POST',
+          mode: 'cors',
+          cache: 'no-cache',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          redirect: 'follow',
+          referrerPolicy: 'no-referrer',
+          body: JSON.stringify(data),
+        })
+        return response.json()
+      }
+
+      postData(LOGIN_URL, LOGIN_BODY).then((data) => {
+        console.log(data) // JSON data parsed by `data.json()` call
+        if (data.success) {
+          this.isLoggedIn = true
+          this.loginMessageText = 'Logged in ✅ (' + data.message + ')'
+        } else {
+          this.loginMessageText = 'Log in error❌  (' + data.data + ')'
+        }
+        this.isLoading = false
+      })
     },
   },
 }
