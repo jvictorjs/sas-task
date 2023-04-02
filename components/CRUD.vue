@@ -19,67 +19,23 @@
         />
       </a>
       <div class="mt-8 bg-white overflow-hidden shadow sm:rounded-lg p-6">
+        <h1>
+          Welcome <b>{{ userLoginData.name }}</b>
+        </h1>
         <div class="flex">
+          <b-spinner v-if="isLoading" label="Spinning"></b-spinner>
           <b-button
+            v-else
             class="mb-2"
             variant="light"
             v-b-modal="'my-modal'"
             size="sm"
-            >searchandstay development task</b-button
+            @click="list"
+            >LIST</b-button
           >
-          <b-modal id="my-modal" hide-footer>
-            <template #modal-title> Task requirements </template>
-            <div class="d-block text-center">
-              <img
-                class="ma-1 d-flex elevation-0 white lighten-3"
-                :src="require('../static/task-requirements.png')"
-                :style="'width: 500px;'"
-              />
-            </div>
-            <b-button class="mt-3" block @click="$bvModal.hide('my-modal')"
-              >Close</b-button
-            >
-          </b-modal>
         </div>
-        <div>
-          <div>
-            <b-form @submit="onSubmit">
-              <b-form-group
-                id="input-group-1"
-                label="Email address:"
-                label-for="input-1"
-              >
-                <b-form-input
-                  id="input-1"
-                  v-model="form.email"
-                  type="email"
-                  placeholder="Enter email"
-                  required
-                ></b-form-input>
-              </b-form-group>
-
-              <b-form-group
-                id="input-group-2"
-                label="Password:"
-                label-for="input-2"
-              >
-                <b-form-input
-                  id="input-2"
-                  v-model="form.password"
-                  placeholder="Enter password"
-                  required
-                  type="password"
-                  aria-describedby="password-help-block"
-                ></b-form-input>
-              </b-form-group>
-
-              <b-spinner v-if="isLoading" label="Spinning"></b-spinner>
-              <b-button v-else type="submit" :disabled="isLoggedIn"
-                >Login</b-button
-              >
-              {{ loginMessageText }}
-            </b-form>
-          </div>
+        <div class="flex flex-column">
+          <div v-for="item in entities" :key="item.id">{{ item }}</div>
         </div>
       </div>
       <div class="flex justify-center pt-4 space-x-2">
@@ -124,55 +80,39 @@
 
 <script>
 export default {
-  name: 'Login',
+  name: 'CRUD',
+  props: ['userLoginData'],
   data() {
     return {
-      form: {
-        email: '',
-        password: '',
-      },
       isLoading: false,
-      isLoggedIn: false,
-      loginMessageText: '',
+      entities: [],
     }
   },
   methods: {
-    onSubmit(event) {
+    list(event) {
       event.preventDefault()
-      const LOGIN_URL = 'https://sys-dev.searchandstay.com/api/admin/login_json'
-      const LOGIN_BODY = {
-        login: {
-          email: this.form.email,
-          password: this.form.password,
-        },
-      }
+      const LIST_URL = 'https://sys-dev.searchandstay.com/api/admin/house_rules'
       this.isLoading = true
-      async function postData(url = '', data = {}) {
+      async function get(url = '', access_token) {
+        console.log(`access_token =`, access_token)
         const response = await fetch(url, {
-          method: 'POST',
+          method: 'GET',
           mode: 'cors',
           cache: 'no-cache',
           credentials: 'same-origin',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + access_token,
           },
           redirect: 'follow',
           referrerPolicy: 'no-referrer',
-          body: JSON.stringify(data),
         })
         return response.json()
       }
 
-      postData(LOGIN_URL, LOGIN_BODY).then((data) => {
+      get(LIST_URL, this.userLoginData.access_token).then((data) => {
         if (data.success) {
-          this.isLoggedIn = true
-          this.loginMessageText = 'Logged in ✅ (' + data.message + ')'
-          this.$emit('userLoggedIn', {
-            userLoginData: data.data.result,
-            loginMessageText: this.loginMessageText,
-          })
-        } else {
-          this.loginMessageText = 'Log in error❌  (' + data.data + ')'
+          this.entities = data.data.entities
         }
         this.isLoading = false
       })
