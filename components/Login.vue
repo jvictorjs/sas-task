@@ -51,10 +51,17 @@
           </b-form-group>
 
           <b-spinner v-if="isLoading" label="Spinning"></b-spinner>
-          <b-button v-else type="submit" :disabled="isLoggedIn">Login</b-button>
-          {{ loginMessageText }}
+          <b-button v-else type="submit">Login</b-button>
         </b-form>
       </div>
+      <b-toast
+        id="toast"
+        title="BootstrapVue"
+        static
+        no-auto-hide
+        class="b-toaster-bottom-left"
+      >
+      </b-toast>
     </div>
   </div>
 </template>
@@ -69,8 +76,6 @@ export default {
         password: '',
       },
       isLoading: false,
-      isLoggedIn: false,
-      loginMessageText: '',
     }
   },
   methods: {
@@ -102,16 +107,20 @@ export default {
 
       postData(LOGIN_URL, LOGIN_BODY).then((data) => {
         if (data.success) {
-          this.isLoggedIn = true
-          this.loginMessageText = 'Logged in ✅ (' + data.message + ')'
-          this.$emit('userLoggedIn', {
-            userLoginData: data.data.result,
-            loginMessageText: this.loginMessageText,
-          })
+          this.makeToast('success', 'Success', data.message)
+          this.$emit('userLoggedIn', { userLoginData: data.data.result })
         } else {
-          this.loginMessageText = 'Log in error❌  (' + data.data + ')'
+          this.makeToast('danger', 'Error', JSON.stringify(data.data))
         }
         this.isLoading = false
+      })
+    },
+    makeToast(variant = null, title, text) {
+      this.$bvToast.toast(text, {
+        title: title,
+        variant: variant,
+        solid: true,
+        toaster: 'b-toaster-bottom-center',
       })
     },
   },
