@@ -42,20 +42,47 @@
     </div>
     <b-modal id="show-modal" hide-footer>
       <template #modal-title> Rule details</template>
-      <div class="d-block text-center">
-        {{ ruleToShow }}
+      <div v-if="ruleToShow" class="m-2 py-1 d-block text-center">
+        <div class="m-3 flex text-center">
+          <div class="mt-2 mx-2">Name</div>
+          <b-form-input
+            v-model="ruleToShow.name"
+            placeholder="Name"
+          ></b-form-input>
+        </div>
+        <div class="m-3 flex text-center">
+          <div class="mt-2 mx-2">Active</div>
+          <b-form-input
+            v-model="ruleToShow.active"
+            placeholder="Name"
+          ></b-form-input>
+        </div>
       </div>
-      <div class="mt-2 flex">
-        <b-button class="mt-1 mx-1" block @click="$bvModal.hide('show-modal')"
+      <b-toast
+        id="toast"
+        title="BootstrapVue"
+        static
+        no-auto-hide
+        class="b-toaster-bottom-left"
+      >
+      </b-toast>
+      <div class="mt-3 flex justify-end">
+        <b-dropdown class="mx-3" right text="Save💾" variant="outline-primary">
+          <b-dropdown-item
+            v-if="!isLoadingUpdate"
+            @click="onUpdateSubmit"
+            variant="primary"
+          >
+            Confirm save
+          </b-dropdown-item>
+          <b-dropdown-item v-else> Loading... </b-dropdown-item>
+        </b-dropdown>
+        <b-dropdown class="mx-3" right text="Delete🗑️" variant="outline-danger">
+          <b-dropdown-item variant="danger"> Confirm delete </b-dropdown-item>
+        </b-dropdown>
+        <b-button class="mx- w-2/12" block @click="$bvModal.hide('show-modal')"
           >Close</b-button
         >
-
-        <b-dropdown right text="Save💾" variant="outline-primary">
-          <b-dropdown-item>Confirm save</b-dropdown-item>
-        </b-dropdown>
-        <b-dropdown right text="Delete🗑️" variant="outline-danger">
-          <b-dropdown-item>Confirm delete</b-dropdown-item>
-        </b-dropdown>
       </div>
     </b-modal>
   </div>
@@ -70,11 +97,19 @@ export default {
       isLoading: false,
       entities: [],
       ruleToShow: null,
+      isLoadingUpdate: false,
     }
   },
   methods: {
-    list(event) {
-      event.preventDefault()
+    makeToast(variant = null, title, text) {
+      this.$bvToast.toast(text, {
+        title: title,
+        variant: variant,
+        solid: true,
+        toaster: 'b-toaster-bottom-center',
+      })
+    },
+    list() {
       const LIST_URL = 'https://sys-dev.searchandstay.com/api/admin/house_rules'
       this.isLoading = true
       async function get(url = '', access_token) {
@@ -103,7 +138,49 @@ export default {
     },
     show(itemId) {
       console.log('show(' + itemId + ')')
-      this.ruleToShow = this.entities.filter((rule) => rule.id === itemId)[0]
+      this.ruleToShow = JSON.parse(
+        JSON.stringify(this.entities.filter((rule) => rule.id === itemId)[0])
+      )
+    },
+    onUpdateSubmit() {
+      this.isLoadingUpdate = true
+      const UPDATE_URL = `https://sys-dev.searchandstay.com/api/admin/house_rules/${this.ruleToShow.id}`
+      const UPDATE_BODY = {
+        house_rules: {
+          name: this.ruleToShow.name,
+          active: this.ruleToShow.active,
+        },
+      }
+      console.log('UPDATE_BODY =', UPDATE_BODY)
+      async function putData(url = '', data = {}, access_token) {
+        const response = await fetch(url, {
+          method: 'PUT',
+          mode: 'cors',
+          cache: 'no-cache',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + access_token,
+          },
+          redirect: 'follow',
+          referrerPolicy: 'no-referrer',
+          body: JSON.stringify(data),
+        })
+        return response.json()
+      }
+
+      putData(UPDATE_URL, UPDATE_BODY, this.userLoginData.access_token).then(
+        (data) => {
+          console.log(data)
+          if (data.success) {
+            this.makeToast('success', 'Success', data.message)
+            this.list()
+          } else {
+            this.makeToast('danger', 'Error', JSON.stringify(data.message))
+          }
+          this.isLoadingUpdate = false
+        }
+      )
     },
   },
 }

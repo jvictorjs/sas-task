@@ -76,6 +76,7 @@ export default {
   methods: {
     onSubmit(event) {
       event.preventDefault()
+      this.isLoading = true
       const LOGIN_URL = 'https://sys-dev.searchandstay.com/api/admin/login_json'
       const LOGIN_BODY = {
         login: {
@@ -83,7 +84,6 @@ export default {
           password: this.form.password,
         },
       }
-      this.isLoading = true
       async function postData(url = '', data = {}) {
         const response = await fetch(url, {
           method: 'POST',
