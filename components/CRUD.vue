@@ -3,16 +3,12 @@
     <h1>
       Welcome <b>{{ userLoginData.name }}</b>
     </h1>
-    <div class="flex">
-      <b-spinner v-if="isLoading" label="Spinning"></b-spinner>
-      <b-button
-        v-else
-        class="m-2"
-        v-b-modal="'show-modal'"
-        size="sm"
-        @click="list"
+    <div class="flex flex-row align-center justify-center h-14">
+      <b-spinner v-if="isLoadingRules" label="Spinning"></b-spinner>
+      <b-button v-else class="m-2" v-b-modal="'show-modal'" @click="list"
         >LIST RULES</b-button
       >
+      <CreateRule :userLoginData="userLoginData" @ruleCreated="list" />
     </div>
     <div v-if="entities.length > 0" class="flex flex-column">
       <div class="mb-2 flex shadow-md">
@@ -53,7 +49,7 @@
           <div class="mt-2 mx-2">Active</div>
           <b-form-input
             v-model="ruleToShow.active"
-            placeholder="Name"
+            placeholder="Active"
           ></b-form-input>
         </div>
       </div>
@@ -100,11 +96,11 @@ export default {
   props: ['userLoginData'],
   data() {
     return {
-      isLoading: false,
-      entities: [],
-      ruleToShow: null,
+      isLoadingRules: false,
       isLoadingUpdate: false,
       isLoadingDelete: false,
+      entities: [],
+      ruleToShow: null,
     }
   },
   methods: {
@@ -118,7 +114,7 @@ export default {
     },
     list() {
       const LIST_URL = 'https://sys-dev.searchandstay.com/api/admin/house_rules'
-      this.isLoading = true
+      this.isLoadingRules = true
       async function get(url = '', access_token) {
         const response = await fetch(url, {
           method: 'GET',
@@ -139,7 +135,7 @@ export default {
         if (data.success) {
           this.entities = data.data.entities
         }
-        this.isLoading = false
+        this.isLoadingRules = false
       })
     },
     show(itemId) {
@@ -203,7 +199,6 @@ export default {
         })
         return response.json()
       }
-
       deleteData(DELETE_URL, this.userLoginData.access_token).then((data) => {
         if (data.success) {
           this.makeToast('success', 'Success', data.message)
