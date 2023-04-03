@@ -7,8 +7,7 @@
       <b-spinner v-if="isLoading" label="Spinning"></b-spinner>
       <b-button
         v-else
-        class="mb-2"
-        variant="light"
+        class="m-2"
         v-b-modal="'show-modal'"
         size="sm"
         @click="list"
@@ -66,7 +65,7 @@
         class="b-toaster-bottom-left"
       >
       </b-toast>
-      <div class="mt-3 flex justify-end">
+      <div class="mt-3 mb-2 flex justify-end">
         <b-dropdown class="mx-3" right text="Save💾" variant="outline-primary">
           <b-dropdown-item
             v-if="!isLoadingUpdate"
@@ -78,9 +77,16 @@
           <b-dropdown-item v-else> Loading... </b-dropdown-item>
         </b-dropdown>
         <b-dropdown class="mx-3" right text="Delete🗑️" variant="outline-danger">
-          <b-dropdown-item variant="danger"> Confirm delete </b-dropdown-item>
+          <b-dropdown-item
+            v-if="!isLoadingDelete"
+            @click="onDeleteSubmit"
+            variant="danger"
+          >
+            Confirm delete
+          </b-dropdown-item>
+          <b-dropdown-item v-else> Loading... </b-dropdown-item>
         </b-dropdown>
-        <b-button class="mx- w-2/12" block @click="$bvModal.hide('show-modal')"
+        <b-button class="mx-3 w-2/12" block @click="$bvModal.hide('show-modal')"
           >Close</b-button
         >
       </div>
@@ -98,6 +104,7 @@ export default {
       entities: [],
       ruleToShow: null,
       isLoadingUpdate: false,
+      isLoadingDelete: false,
     }
   },
   methods: {
@@ -113,7 +120,6 @@ export default {
       const LIST_URL = 'https://sys-dev.searchandstay.com/api/admin/house_rules'
       this.isLoading = true
       async function get(url = '', access_token) {
-        console.log(`access_token =`, access_token)
         const response = await fetch(url, {
           method: 'GET',
           mode: 'cors',
@@ -137,7 +143,6 @@ export default {
       })
     },
     show(itemId) {
-      console.log('show(' + itemId + ')')
       this.ruleToShow = JSON.parse(
         JSON.stringify(this.entities.filter((rule) => rule.id === itemId)[0])
       )
@@ -151,7 +156,6 @@ export default {
           active: this.ruleToShow.active,
         },
       }
-      console.log('UPDATE_BODY =', UPDATE_BODY)
       async function putData(url = '', data = {}, access_token) {
         const response = await fetch(url, {
           method: 'PUT',
@@ -171,7 +175,6 @@ export default {
 
       putData(UPDATE_URL, UPDATE_BODY, this.userLoginData.access_token).then(
         (data) => {
-          console.log(data)
           if (data.success) {
             this.makeToast('success', 'Success', data.message)
             this.list()
@@ -181,6 +184,36 @@ export default {
           this.isLoadingUpdate = false
         }
       )
+    },
+    onDeleteSubmit() {
+      this.isLoadingDelete = true
+      const DELETE_URL = `https://sys-dev.searchandstay.com/api/admin/house_rules/${this.ruleToShow.id}`
+      async function deleteData(url = '', access_token) {
+        const response = await fetch(url, {
+          method: 'DELETE',
+          mode: 'cors',
+          cache: 'no-cache',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + access_token,
+          },
+          redirect: 'follow',
+          referrerPolicy: 'no-referrer',
+        })
+        return response.json()
+      }
+
+      deleteData(DELETE_URL, this.userLoginData.access_token).then((data) => {
+        if (data.success) {
+          this.makeToast('success', 'Success', data.message)
+          this.list()
+          this.$bvModal.hide('show-modal')
+        } else {
+          this.makeToast('danger', 'Error', JSON.stringify(data.message))
+        }
+        this.isLoadingDelete = false
+      })
     },
   },
 }
