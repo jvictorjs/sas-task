@@ -5,10 +5,7 @@
     </h1>
     <div class="flex flex-row align-center justify-center h-14">
       <b-spinner v-if="isLoadingRules" label="Spinning"></b-spinner>
-      <b-button v-else class="m-2" v-b-modal="'show-modal'" @click="list"
-        >LIST RULES</b-button
-      >
-      <CreateRule :userLoginData="userLoginData" @ruleCreated="list" />
+      <CreateRule v-else :userLoginData="userLoginData" @ruleCreated="list" />
     </div>
     <div v-if="entities.length > 0" class="flex flex-column">
       <div class="mb-2 flex shadow-md">
@@ -102,6 +99,9 @@ export default {
       entities: [],
       ruleToShow: null,
     }
+  },
+  mounted() {
+    this.list()
   },
   methods: {
     makeToast(variant = null, title, text) {
